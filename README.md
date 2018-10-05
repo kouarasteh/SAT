@@ -1,43 +1,24 @@
 # SAT
 An impractical retro orbiter game for FPGA
-Introduction
+# Introduction
 	Our game is a gravity based game that tasks the user with timing jumps from various planets to reach a destination planet across a solar system. The vessel takes advantage of tangential movement from the centripetal acceleration of the vessel caused by the gravity of the planet it is orbiting to make its planetary jumps. There are several paths with varying obstacles like asteroids and moving moons, allowing the user to measure risk and reward to try and make the fastest time while still finishing. 
-Written Description of the Key Aspects of the Final Project
+# Key Aspects
 The sincos module was one of the more unique solutions in our final project. We created it to serve as a lookup table to map an angle to useful x and y coordinates in the range of [-10, 10] for use in vessel motion control while the vessel was orbiting a planet. While it requires a large amount of hardware, the lookup table keeps the game very fast for smooth gameplay. 
-	Describe how NIOS interacts with USB and VGA and general overview
+# How NIOS interacts with USB and VGA and general overview
 The NIOS II is used to run C code and collect and output data from the FPGA USB and VGA ports respectively. The CY7C67200 is anEZ-OTG peripheral controller that is used for easier management of the USB OTG protocol. Functionally, the process of reading and writing to the USB involes selectively writing and reading from pins HPI_ADDR, the address being sent, and HPI_DATA, the data being sent. THE EZ-OTG handles internal operations regarding writing to HPI_MAILBOX for execution and temporary storage in RAM. 
 The VGA is written to using the VGA_controller module, which outputs horizontal and vertical signal pulses to continuously update each pixel across the screen. The controller uses next-state variables with suffix ‘in’ to update the position of the pixel being updated, allowing for interrupts in the case of the ball appearing in one of those pixels. This allows for a smooth transition of ball movement across the screen with no observed glitches.
-Written description of USB protocol
+# USB protocol
 IO_write takes in an 8 bit address and 16 bits of data, then assigns the address to the OTG_HPI_address, a location in memory that the EZ_OTG uses as the address of memory to be read or written. Next, IO_write enables a chip with chip select, sets the OTG to write mode, and sends data to OTG_HPI_data, a location in memory that the EZ_OTG uses as storage for data to be read or written. Then write mode is disabled and the chip is deselected.
 IO_read takes in only the 8-bit address of the data to be read. It sets this address to the OTG_HPI_address memory location, so that the EZ_OTG takes the address to return the contents of. Then a chip is selected and enabled, read mode is activated, and a temporary 16-bit unsigned int takes in the data stored at the OTG_HPI_data location where the EZ_OTG has left the contents of the memory address queried. Then read mode is disabled and chip select is deselected. Finally, the data queried is printed to console and returned.
 UsbWrite is a simple program that writes its address parameter to the HPI_ADDR address memory location with IO_write, then writes its data parameter to the HPI_DATA data memory location with IO_write. The EZ_OTG uses these memory allocated addresses to determine the address to write to and the data to write in this address.
 UsbRead writes its address parameter to the HPI_ADDR address memory location with IO_write, telling EZ_OTG the address to be queried. Then, UsbRead calls IO_read to retrieve the data transmitted to the HPI_DATA memory location by EZ_OTG.
- A Short Explanation of the keyboard compatibility issue
+ 
+ # A Short Explanation of the keyboard compatibility issue
 
 Several of the USB keyboards in the lab are not up to spec with the handshake ability for communication between the keyboard and the software. The software expects to receive a status byte of 0x03 when the keyboard sends a value but not all of the keyboards we used sent this status byte. Often the terminal was reading that the status byte was NULL, 0x00, and NIOS complained about compatibility issues with the keyboard. A simple fix suggested by Matthew Daniel was to bypass the check by manually setting the status byte after calling IO_Read. This option was approved by Professor Cheng and worked for our purposes.  
-State Diagrams
+# State Diagrams
 
 The game starts on a start page and displays instructions for starting the screen using a font sprite. Once the Enter key code is received the game page is displayed and the vessel motion state machine is set to be in the bound state. The bound state controls the motion of the vessel by incrementing an angle and using that angle and the position of the planet to set the proper position of the vessel. When a the key code corresponding to the space bar is detected the state transitions to leaving and sets the motion for the unbound state. The unbound state is moving the vessel at a constant velocity across the screen and waits for a collision detection between the edge of the screen, a planet, or an asteroid. When a planet is detected the state machine goes to the arriving state which sets the current planet so that the vessel’s position can be accurately updated in the bound state. If an asteroid or the edge of the screen is detected the screen is updated to display a font sprite saying “GAME OVER” in red text.  
-
-
-
-
-
-
-
-Vessel Motion Control:
-
-
-
-
-Display pages for Start Screen, Game Screen, and End Screen
-
-
-
-
-Block Diagram
-
-State Machine Simulation
 
 This simulation tests the ‘state’ variable as well as ‘curplan’ variable. ‘State’ of the satellite vessel is one of four values, 00 for bound to a planet, 01 for leaving orbit, 10 for unbound motion, and 11 for entering orbit of a new planet. ‘Curplan’ is the number of the current planet that the vessel is bound to. If the vessel is unbound, ‘curplan’ is 111, otherwise it corresponds to that planet’s number. We cycle through the planets, and observe that the state and curplan variables change as they could.
 
@@ -45,7 +26,7 @@ This simulation tests the ‘state’ variable as well as ‘curplan’ variable
 
 
 
-Module Descriptions
+# Module Descriptions
 
 Module: VGA_controller.sv
 Inputs: Clk, Reset
@@ -111,7 +92,7 @@ Module: SAT_soc.qsys
 Description:  This file generates the connections between the PIOs in NIOS.
 Purpose: Allows the PIOs to share data as well as interact with the FPGA board’s external ports. 
 
-
+# Memory and Power Specs
 LUT
 2595 Logic Elements
 DSP
@@ -129,6 +110,6 @@ Dynamic Power
 Total Power
 171.85 mW
 
-Conclusion
+# Conclusion
 	We were able to implement much of the functionality we had planned. Some possible extensions would be to add a scoring system based on time, a high score leaderboard, and several more planet configurations for variety. Sprites to make the game more visually appealing would be a good addition. A frame buffer would be a good way to implement some better graphics. 
 	After exploring the capabilities of the FPGA we moved away from a relative gravity field and thrust as the system of movement for the vessel. A gravity field would have required square root which is not feasible given the time constraints of our final project. The movement system we implemented was better for the purpose of achieving the functionality of our game.  Allowing for a controlled movement based on the conditions namely orbiting a planet or moving through space uninhibited by gravity allowed for a feasible execution of our design.  
